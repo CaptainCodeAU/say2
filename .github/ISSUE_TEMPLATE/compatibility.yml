@@ -1,0 +1,36 @@
+name: macOS compatibility report
+description: Report a working or broken macOS build
+title: "[Compatibility] macOS "
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping track a private API that may change in any point release.
+        Do not attach Siri model files or other Apple assets.
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Doctor report
+      description: Paste the complete output of `siri-tts doctor --json`.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed behavior
+      description: What command did you run, and what happened?
+    validations:
+      required: true
+  - type: dropdown
+    id: listened
+    attributes:
+      label: Human listening check
+      options:
+        - The output was the requested Siri voice and sounded complete
+        - Audio was produced, but voice identity or completeness was wrong
+        - No usable audio was produced
+        - Not checked
+    validations:
+      required: true

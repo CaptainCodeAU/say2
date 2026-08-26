@@ -1,0 +1,76 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)
+// swift-module-flags: -target arm64-apple-macosx26.0 -enable-objc-interop -enable-library-evolution -module-name SiriTTSService
+import CoreAudioTypes
+import Foundation
+import Swift
+
+public class SynthesisVoice : Foundation.NSObject {
+  public init(language: Swift.String, name: Swift.String?)
+  public var language: Swift.String { get set }
+  public var name: Swift.String? { get set }
+  public var version: Swift.Int { get set }
+  public var assetKey: Swift.String { get }
+}
+
+public class WordTimingInfo : Foundation.NSObject {
+  public init(startTiming: Swift.Double, textRange: Foundation.NSRange)
+  public var startTime: Swift.Double { get set }
+  public var textRange: Foundation.NSRange { get set }
+}
+
+public class AudioData : Foundation.NSObject {
+  public var audioData: Foundation.Data { get set }
+  public var asbd: CoreAudioTypes.AudioStreamBasicDescription { get set }
+  public var packetDescriptions: Foundation.Data { get set }
+  public var packetCount: Swift.Int { get set }
+  final public var duration: Swift.Double { get }
+  final public var sampleCount: Swift.UInt { get }
+}
+
+public class SynthesisContext : Foundation.NSObject {
+  public var didGenerateAudio: ((SiriTTSService.AudioData) -> Swift.Void)? { get set }
+  public var didGenerateWordTimings: (([SiriTTSService.WordTimingInfo]) -> Swift.Void)? { get set }
+  public var rate: Swift.Float { get set }
+  public var pitch: Swift.Float { get set }
+  public var volume: Swift.Float { get set }
+}
+
+public class BaseRequest : Foundation.NSObject {}
+
+public class SynthesisRequest : SiriTTSService.BaseRequest {
+  public init(text: Swift.String, voice: SiriTTSService.SynthesisVoice)
+  public var synthesisContext: SiriTTSService.SynthesisContext { get set }
+}
+
+public class DaemonSession : Foundation.NSObject {
+  override public init()
+  public var keepActive: Swift.Bool { get set }
+  public func invokeDaemon() -> Swift.Bool
+  public func downloadedVoices(
+    matching: SiriTTSService.SynthesisVoice?,
+    reply: @escaping ([SiriTTSService.SynthesisVoice]) -> Swift.Void
+  )
+  public func predefinedVoices() async throws -> [SiriTTSService.SynthesisVoice]
+  public func subscribe(
+    voices: [SiriTTSService.SynthesisVoice],
+    reply: @escaping (Swift.Error?) -> Swift.Void
+  )
+  public func synthesize(
+    request: SiriTTSService.SynthesisRequest,
+    didFinish: @escaping (Swift.Error?) -> Swift.Void
+  )
+  public func prewarm(
+    request: SiriTTSService.SynthesisRequest,
+    didFinish: @escaping (Swift.Error?) -> Swift.Void
+  )
+  public func cancel(request: SiriTTSService.BaseRequest)
+  public func queryWordTimingSupport(
+    voice: SiriTTSService.SynthesisVoice,
+    reply: @escaping (Swift.Bool) -> Swift.Void
+  )
+  public func isANEModelCompiled(
+    matching: SiriTTSService.SynthesisVoice,
+    reply: @escaping (Swift.Bool, Swift.Error?) -> Swift.Void
+  )
+}

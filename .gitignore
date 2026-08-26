@@ -1,0 +1,10 @@
+.build/
+.swiftpm/
+.DS_Store
+.playwright-mcp/
+.module-cache/
+build/
+*.wav
+*.caf
+*.aiff
+*.pcm
