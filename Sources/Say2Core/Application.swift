@@ -179,7 +179,22 @@ public final class Say2Application: @unchecked Sendable {
         let spoolDirectory = options.output.map {
             URL(fileURLWithPath: $0).standardizedFileURL.deletingLastPathComponent()
         } ?? FileManager.default.temporaryDirectory
-        let spool = streaming ? nil : try PCMSpool(directory: spoolDirectory)
+        let spool: PCMSpool?
+        if streaming || options.noOutput {
+            spool = nil
+        } else if options.output != nil {
+            do {
+                spool = try PCMSpool(directory: spoolDirectory)
+            } catch {
+                let detail = (error as? CLIError)?.message ?? error.localizedDescription
+                throw CLIError(
+                    "Could not create output in directory '\(spoolDirectory.path)': \(detail)",
+                    code: .outputWriteFailed
+                )
+            }
+        } else {
+            spool = try PCMSpool(directory: spoolDirectory)
+        }
         let rendered = try LongFormSynthesis.render(
             options,
             coordinator: coordinator,
@@ -201,13 +216,23 @@ public final class Say2Application: @unchecked Sendable {
         let outputDescription: String
         if streaming {
             outputDescription = "stdout"
+        } else if options.noOutput {
+            outputDescription = "discarded"
         } else if let path = options.output {
             let outputURL = URL(fileURLWithPath: path).standardizedFileURL
-            try spool?.materialize(
-                format: options.format,
-                spec: rendered.spec,
-                at: outputURL
-            )
+            do {
+                try spool?.materialize(
+                    format: options.format,
+                    spec: rendered.spec,
+                    at: outputURL
+                )
+            } catch {
+                let detail = (error as? CLIError)?.message ?? error.localizedDescription
+                throw CLIError(
+                    "Could not write output file '\(outputURL.path)': \(detail)",
+                    code: .outputWriteFailed
+                )
+            }
             outputDescription = outputURL.path
         } else {
             let playbackURL = FileManager.default.temporaryDirectory

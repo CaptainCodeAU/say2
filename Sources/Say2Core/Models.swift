@@ -12,8 +12,24 @@ public enum ExitCode: Int32, Sendable {
     case daemonUnreachable = 5
     case noAudio = 6
     case operationTimedOut = 7
+    /// The requested voice exists in Apple's catalog but is not installed on
+    /// this Mac -- distinct from `voiceNotFound`, which means the name did
+    /// not resolve to any known voice at all. A caller can recover from this
+    /// one with `say2 voices --install`; it cannot recover from the other.
+    case voiceNotInstalled = 8
     case cancelled = 130
     case internalFailure = 70
+    /// The private Siri TTS framework is permanently unavailable on this
+    /// system (e.g. an Apple update removed or renamed it) -- distinct from
+    /// `daemonUnreachable`, which is a transient, retry-worthy failure of an
+    /// otherwise-present framework. A caller should stop retrying and fall
+    /// back to a public engine (`--engine av`) rather than treat this like 5.
+    case frameworkUnavailable = 69
+    /// Audio could not be written to the requested output location (the
+    /// directory for `-o`/`--output` doesn't exist, isn't writable, or isn't
+    /// a normal writable path like `/dev`) -- distinct from
+    /// `internalFailure`, which is an unexpected bug inside say2 itself.
+    case outputWriteFailed = 73
 }
 
 public struct CLIError: LocalizedError, Sendable {
@@ -257,6 +273,7 @@ public struct SynthesisOptions: Sendable {
     public var requestTimings = false
     public var prewarm = true
     public var timeout: TimeInterval = 120
+    public var noOutput = false
 
     public init() {}
 }

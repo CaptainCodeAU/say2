@@ -22,7 +22,10 @@ public final class EngineCoordinator: @unchecked Sendable {
             do {
                 return (try siri.synthesize(options, onPCMChunk: onPCMChunk), nil)
             } catch let siriError as CLIError {
-                guard [.daemonUnreachable, .noCompatibleEngine, .noAudio].contains(siriError.code)
+                guard [
+                    .daemonUnreachable, .noCompatibleEngine, .noAudio,
+                    .frameworkUnavailable, .operationTimedOut,
+                ].contains(siriError.code)
                 else { throw siriError }
                 do {
                     return (try av.synthesize(options, onPCMChunk: onPCMChunk), .siri)

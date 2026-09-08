@@ -127,6 +127,8 @@ public enum CLIParser {
                     throw CLIError("--timeout expects seconds from 1 through 3600", code: .usage)
                 }
                 result.timeout = timeout
+            case "--no-output":
+                result.noOutput = true
             default:
                 if argument.hasPrefix("-") {
                     throw CLIError("Unsupported option '\(argument)'", code: .usage)
@@ -147,6 +149,9 @@ public enum CLIParser {
         }
         if result.inputFile != nil, !result.text.isEmpty {
             throw CLIError("Pass either text or -f/--input-file, not both", code: .usage)
+        }
+        if result.noOutput, result.output != nil {
+            throw CLIError("--no-output cannot be combined with -o/--output", code: .usage)
         }
         result.requestTimings = result.json || result.timingsPath != nil
         return result
@@ -326,6 +331,19 @@ COMMANDS
   serve        Run the OpenAI-compatible local HTTP API
 
 Run `say2 COMMAND --help` for command-specific options.
+
+EXIT CODES
+  0    success
+  2    invalid invocation
+  3    no compatible engine
+  4    voice not found
+  5    daemon unreachable (present, not responding) -- transient, retry is reasonable
+  6    empty, silent, malformed, or implausibly short audio
+  7    timed out waiting for an operation, including a bounded synthesis render
+  69   Siri TTS framework not present on this system -- permanent, do not retry; use --engine av
+  70   unexpected internal failure
+  73   could not write audio to the requested output location
+  130  cancelled
 """
 
 public let synthesisHelp = """
@@ -337,6 +355,7 @@ OPTIONS
   -v, --voice NAME       Voice display name or asset identifier
   --language TAG         Restrict voice matching (for example en-US)
   -o, --output PATH      Output file; use - for raw PCM on stdout
+  --no-output            Synthesize and discard the audio; measure without writing anything
   -f, --input-file PATH  Read UTF-8 input from a file
   -r WPM                 `say`-compatible words per minute (175 = 1.0x)
   --rate MULTIPLIER      Native speaking-rate multiplier

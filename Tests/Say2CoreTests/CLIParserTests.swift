@@ -28,6 +28,27 @@ final class CLIParserTests: XCTestCase {
         XCTAssertEqual(options.output, "out.pcm")
     }
 
+    func testNoOutputFlagParsing() throws {
+        guard case .synthesize(let options) = try CLIParser.parse([
+            "synthesize", "--no-output", "Hi",
+        ]) else {
+            return XCTFail("Expected synthesis")
+        }
+        XCTAssertTrue(options.noOutput)
+        XCTAssertNil(options.output)
+    }
+
+    func testNoOutputRejectsOutputPath() {
+        XCTAssertThrowsError(try CLIParser.parse([
+            "synthesize", "--no-output", "-o", "out.wav", "Hi",
+        ])) { error in
+            guard let cliError = error as? CLIError else {
+                return XCTFail("Expected CLIError, got \(error)")
+            }
+            XCTAssertEqual(cliError.code, .usage)
+        }
+    }
+
     func testSayWPMConversion() throws {
         let normal = try CLIParser.parseSynthesis(["-r", "175", "Text"])
         let double = try CLIParser.parseSynthesis(["-r", "350", "Text"])

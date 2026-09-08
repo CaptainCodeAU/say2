@@ -213,6 +213,7 @@ Positional text, `-f`/`--input-file`, and standard input are the three input mod
 | `-v NAME`, `--voice NAME`      | Display name or asset identifier; default: engine-selected voice | Select the voice case-insensitively. A catalog identifier is mapped to its installed version when possible. Without an explicit voice, Siri uses its first matching installed voice; AV uses the platform default for the requested language, or `en-US` when no language is given. |
 | `-l TAG`, `--language TAG`     | Language tag such as `en-US`; default: no restriction            | Restrict voice selection to an exact, case-insensitive language match.                                                                                                                                                                                                              |
 | `-o PATH`, `--output PATH`     | File path, `-`, or omitted                                       | Write a file, stream raw PCM to standard output with `-`, or play through the default audio output when omitted.                                                                                                                                                                    |
+| `--no-output`                  | No value                                                          | Synthesize and discard the audio without writing or playing it. For measuring synthesis in isolation (e.g. benchmarking). Cannot be combined with `-o`/`--output`. Prefer this over `-o /dev/null`, which fails (see [Exit codes](#exit-codes)) since `/dev` isn't a writable directory for say2's atomic-write staging. |
 | `-f PATH`, `--input-file PATH` | UTF-8 text-file path                                             | Read the complete synthesis input from a file. Cannot be combined with positional text.                                                                                                                                                                                             |
 | `-r WPM`                       | Greater than 0 through 700; default: 175                         | `say`-compatible words per minute. The CLI maps 175 WPM to native rate `1.0`.                                                                                                                                                                                                       |
 | `--rate MULTIPLIER`            | Greater than 0 through 4; default: `1.0`                         | Set the native speaking-rate multiplier directly. If both rate forms are supplied, the last one wins.                                                                                                                                                                               |
@@ -235,9 +236,10 @@ Positional text, `-f`/`--input-file`, and standard input are the three input mod
 Output rules:
 
 - With no `-o`/`--output`, synthesis is rendered to a temporary WAV file, played through the default audio device, and then removed.
+- `--no-output` skips writing or playing anything; nothing is staged to disk. Use it for measuring synthesis in isolation.
 - `-o -` requires `--format pcm`. The engine must resolve to `siri` or `av`; omitting `--engine` uses the default `siri`, while `auto` is rejected because fallback after partial streaming could mix engines.
 - When PCM owns standard output, audio bytes go to standard output and JSON, progress, warnings, and errors go to standard error.
-- `auto` falls back only for daemon, engine, or audio failures. A missing requested voice and other permanent errors do not silently fall back.
+- `auto` falls back to `av` for daemon, engine, framework-unavailable, timeout, or audio failures. A missing or uninstalled requested voice and other permanent user errors do not silently fall back.
 - Long input is split at natural boundaries into bounded sequential renders. Each piece must preserve the same audio format, voice, and selected engine.
 - WAV has an approximately 4 GB container limit. Use raw PCM for larger output.
 
@@ -411,16 +413,22 @@ The response reports whether the helper used the `siri` or public `av` engine. S
 The interface version is `1.0.0`. It covers the documented CLI behavior and HTTP routes used by the Swift SDK. Most versioned CLI JSON payloads carry `schemaVersion: 1`; the installation-status payload exception is documented in [JSON and timing payloads](#json-and-timing-payloads). Stable CLI exit codes:
 
 | Code | Meaning                                                          |
-| ---- | ---------------------------------------------------------------- |
+| ---- | ----------------------------------------------------------------- |
 | 0    | Success                                                          |
 | 2    | Invalid invocation                                               |
 | 3    | No compatible engine                                             |
 | 4    | Voice not found                                                  |
-| 5    | Daemon or engine unreachable                                     |
+| 5    | Daemon unreachable (present but not responding) — transient, worth retrying |
 | 6    | Empty, silent, malformed, or implausibly short audio             |
-| 7    | Timed out waiting for a requested operation to become observable |
+| 7    | Timed out waiting for a requested operation to become observable, including a bounded synthesis render |
+| 69   | The private Siri TTS framework is not present on this system — permanent until a say2/macOS update; fall back to `--engine av` rather than retry |
 | 70   | Unexpected internal failure                                      |
+| 73   | Could not write audio to the requested output location (bad directory, unwritable path) |
 | 130  | Cancelled                                                        |
+
+Codes 5 and 69 look similar but call for different caller behavior: 5 means the framework exists but didn't answer in time (retrying is reasonable), 69 means the framework itself is gone (retrying will not help; switch engines).
+
+To verify your own fallback logic against exit 69 without waiting for an actual macOS update to break something, set `SAY2_FORCE_FRAMEWORK_UNAVAILABLE=1` in the environment for any `say2` invocation — it forces the "framework not present" path deterministically, with no effect unless that variable is set.
 
 ## Testing and performance
 

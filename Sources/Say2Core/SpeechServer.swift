@@ -518,9 +518,9 @@ public final class SpeechServer {
             status = failure.status
         } else if let cliError = error as? CLIError {
             switch cliError.code {
-            case .usage, .voiceNotFound:
+            case .usage, .voiceNotFound, .voiceNotInstalled:
                 status = "400 Bad Request"
-            case .noCompatibleEngine, .daemonUnreachable:
+            case .noCompatibleEngine, .daemonUnreachable, .frameworkUnavailable, .operationTimedOut:
                 status = "503 Service Unavailable"
             case .cancelled:
                 status = "499 Client Closed Request"

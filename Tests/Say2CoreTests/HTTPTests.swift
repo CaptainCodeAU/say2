@@ -77,6 +77,25 @@ final class HTTPTests: XCTestCase {
         }
     }
 
+    func testNewExitCodesMapToNonGenericHTTPStatuses() {
+        let server = SpeechServer(options: ServeOptions(), coordinator: EngineCoordinator())
+
+        let framework = server.errorResponse(CLIError("framework gone", code: .frameworkUnavailable))
+        let frameworkText = String(decoding: framework, as: UTF8.self)
+        XCTAssertTrue(frameworkText.hasPrefix("HTTP/1.1 503 Service Unavailable\r\n"))
+        XCTAssertTrue(frameworkText.contains("framework gone"))
+
+        let notInstalled = server.errorResponse(CLIError("not installed", code: .voiceNotInstalled))
+        let notInstalledText = String(decoding: notInstalled, as: UTF8.self)
+        XCTAssertTrue(notInstalledText.hasPrefix("HTTP/1.1 400 Bad Request\r\n"))
+        XCTAssertTrue(notInstalledText.contains("not installed"))
+
+        let timedOut = server.errorResponse(CLIError("render timed out", code: .operationTimedOut))
+        let timedOutText = String(decoding: timedOut, as: UTF8.self)
+        XCTAssertTrue(timedOutText.hasPrefix("HTTP/1.1 503 Service Unavailable\r\n"))
+        XCTAssertTrue(timedOutText.contains("render timed out"))
+    }
+
     func testInternalFailuresReturnGenericMessageButKnownFailuresDoNot() {
         let server = SpeechServer(options: ServeOptions(), coordinator: EngineCoordinator())
 

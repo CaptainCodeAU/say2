@@ -19,6 +19,14 @@ public final class SiriEngine: @unchecked Sendable {
     }
 
     public var isFrameworkPresent: Bool {
+        // Deterministic test hook: exercising the real "Apple removed the
+        // framework" path requires actually removing it, which isn't
+        // something a test (or a caller verifying their own fallback logic)
+        // can safely do. Setting this forces the code 69 path without
+        // touching the system.
+        if ProcessInfo.processInfo.environment["SAY2_FORCE_FRAMEWORK_UNAVAILABLE"] == "1" {
+            return false
+        }
         guard let handle = dlopen(
             "/System/Library/PrivateFrameworks/SiriTTSService.framework/SiriTTSService",
             RTLD_LAZY | RTLD_LOCAL
@@ -30,13 +38,16 @@ public final class SiriEngine: @unchecked Sendable {
     public func connect() throws {
         guard isFrameworkPresent else {
             throw CLIError(
-                "The private Siri TTS framework or resident daemon is unavailable",
-                code: .daemonUnreachable
+                "The private Siri TTS framework is not present on this system "
+                    + "(an Apple update may have removed or renamed it). "
+                    + "This will not resolve on retry -- use --engine av instead.",
+                code: .frameworkUnavailable
             )
         }
         guard session.invokeDaemon() else {
             throw CLIError(
-                "The private Siri TTS framework or resident daemon is unavailable",
+                "The Siri TTS framework is present but its resident daemon "
+                    + "did not respond. This may be transient.",
                 code: .daemonUnreachable
             )
         }
@@ -456,7 +467,7 @@ public final class SiriEngine: @unchecked Sendable {
         guard completed else {
             _ = lifecycle.cancelActive()
             session.cancel(request: request)
-            throw CLIError("Timed out waiting for Siri synthesis", code: .daemonUnreachable)
+            throw CLIError("Timed out waiting for Siri synthesis", code: .operationTimedOut)
         }
         try throwIfCancelled(token, notifyCancellation: emitCancellation)
         do {
@@ -642,9 +653,20 @@ public final class SiriEngine: @unchecked Sendable {
                 return match
             }
             if let catalogVoice = try? downloadableVoices().first(where: {
-                $0.catalogAssetKey.caseInsensitiveCompare(wanted) == .orderedSame
-            }), let match = candidates.first(where: catalogVoice.matchesInstalled) {
-                return match
+                guard options.language == nil
+                    || $0.language.caseInsensitiveCompare(options.language!) == .orderedSame
+                else { return false }
+                return $0.catalogAssetKey.caseInsensitiveCompare(wanted) == .orderedSame
+                    || $0.name.caseInsensitiveCompare(wanted) == .orderedSame
+            }) {
+                if let match = candidates.first(where: catalogVoice.matchesInstalled) {
+                    return match
+                }
+                throw CLIError(
+                    "Siri voice '\(wanted)' exists but is not installed. "
+                        + "Run `say2 voices --install \"\(wanted)\"`.",
+                    code: .voiceNotInstalled
+                )
             }
             throw CLIError(
                 "Siri voice '\(wanted)' was not found. Run `say2 voices`.",
