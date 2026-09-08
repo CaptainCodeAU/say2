@@ -28,6 +28,49 @@ final class CLIParserTests: XCTestCase {
         XCTAssertEqual(options.output, "out.pcm")
     }
 
+    func testExplainParsing() throws {
+        guard case .explain(let code) = try CLIParser.parse(["--explain", "69"]) else {
+            return XCTFail("Expected .explain")
+        }
+        XCTAssertEqual(code, 69)
+    }
+
+    func testExplainRequiresNumericCode() {
+        XCTAssertThrowsError(try CLIParser.parse(["--explain", "not-a-number"])) { error in
+            XCTAssertEqual((error as? CLIError)?.code, .usage)
+        }
+        XCTAssertThrowsError(try CLIParser.parse(["--explain"]))
+    }
+
+    func testExitCodesParsing() throws {
+        guard case .exitCodes(let json) = try CLIParser.parse(["--exit-codes"]) else {
+            return XCTFail("Expected .exitCodes")
+        }
+        XCTAssertFalse(json)
+        guard case .exitCodes(let jsonFlag) = try CLIParser.parse(["--exit-codes", "--json"]) else {
+            return XCTFail("Expected .exitCodes")
+        }
+        XCTAssertTrue(jsonFlag)
+        XCTAssertThrowsError(try CLIParser.parse(["--exit-codes", "--bogus"]))
+    }
+
+    func testExitCodeReferenceCoversEveryEnumCaseExactlyOnce() {
+        let allCases: [ExitCode] = [
+            .success, .usage, .noCompatibleEngine, .voiceNotFound, .daemonUnreachable,
+            .noAudio, .operationTimedOut, .voiceNotInstalled, .cancelled, .internalFailure,
+            .frameworkUnavailable, .outputWriteFailed,
+        ]
+        let referencedCodes = exitCodeReference.map(\.code)
+        XCTAssertEqual(
+            Set(referencedCodes), Set(allCases.map(\.rawValue)),
+            "exitCodeReference has drifted from the ExitCode enum"
+        )
+        XCTAssertEqual(
+            referencedCodes.count, Set(referencedCodes).count,
+            "exitCodeReference has a duplicate code"
+        )
+    }
+
     func testNoOutputFlagParsing() throws {
         guard case .synthesize(let options) = try CLIParser.parse([
             "synthesize", "--no-output", "Hi",

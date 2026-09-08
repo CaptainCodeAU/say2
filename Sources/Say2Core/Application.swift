@@ -28,7 +28,46 @@ public final class Say2Application: @unchecked Sendable {
             stateLock.withLock { activeServer = server }
             defer { stateLock.withLock { activeServer = nil } }
             try server.run()
+        case .explain(let code):
+            try runExplain(code)
+        case .exitCodes(let json):
+            runExitCodes(json: json)
         }
+    }
+
+    private func runExplain(_ code: Int32) throws {
+        guard let entry = exitCodeReference.first(where: { $0.code == code }) else {
+            throw CLIError(
+                "Unknown exit code \(code). Run `say2 --exit-codes` to see all of them.",
+                code: .usage
+            )
+        }
+        print("exit \(entry.code): \(entry.name)\n")
+        print("MEANING")
+        print("  \(entry.meaning)\n")
+        print("REMEDY")
+        print("  \(entry.remedy)")
+    }
+
+    private func runExitCodes(json: Bool) {
+        if json {
+            struct Payload: Encodable {
+                let schemaVersion = say2SchemaVersion
+                let codes: [ExitCodeDescription]
+            }
+            printJSON(Payload(codes: exitCodeReference))
+            return
+        }
+        let nameWidth = max(4, exitCodeReference.map(\.name.count).max() ?? 4)
+        print("CODE  " + "NAME".padding(toLength: nameWidth, withPad: " ", startingAt: 0) + "  MEANING")
+        for entry in exitCodeReference {
+            print(
+                String(entry.code).padding(toLength: 4, withPad: " ", startingAt: 0) + "  " +
+                entry.name.padding(toLength: nameWidth, withPad: " ", startingAt: 0) + "  " +
+                entry.meaning
+            )
+        }
+        print("\nRun `say2 --explain CODE` for what to do about a specific one.")
     }
 
     public func cancel() {

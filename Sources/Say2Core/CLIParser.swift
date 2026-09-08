@@ -5,6 +5,25 @@ public enum CLIParser {
         guard let first = rawArguments.first else { return .help }
         if first == "--version" || first == "-V" { return .version }
         if first == "--help" || first == "-h" || first == "help" { return .help }
+        if first == "--explain" {
+            guard rawArguments.count == 2, let code = Int32(rawArguments[1]) else {
+                throw CLIError(
+                    "--explain requires a numeric exit code, for example: say2 --explain 69",
+                    code: .usage
+                )
+            }
+            return .explain(code)
+        }
+        if first == "--exit-codes" {
+            switch rawArguments.count {
+            case 1:
+                return .exitCodes(json: false)
+            case 2 where rawArguments[1] == "--json":
+                return .exitCodes(json: true)
+            default:
+                throw CLIError("--exit-codes accepts only --json", code: .usage)
+            }
+        }
 
         switch first {
         case "voices":
@@ -323,6 +342,8 @@ USAGE
   say2 voices [--json | --available | --install NAME | --purge NAME | --status NAME | --manage]
   say2 doctor [--json]
   say2 serve [--port 8080]
+  say2 --explain CODE
+  say2 --exit-codes [--json]
 
 COMMANDS
   synthesize   Render text to a file, stdout, or the default audio output
@@ -340,10 +361,13 @@ EXIT CODES
   5    daemon unreachable (present, not responding) -- transient, retry is reasonable
   6    empty, silent, malformed, or implausibly short audio
   7    timed out waiting for an operation, including a bounded synthesis render
+  8    voice known but not installed; `say2 voices --install` fixes it
   69   Siri TTS framework not present on this system -- permanent, do not retry; use --engine av
   70   unexpected internal failure
   73   could not write audio to the requested output location
   130  cancelled
+
+Run `say2 --explain CODE` for what a specific code means and what to do about it.
 """
 
 public let synthesisHelp = """

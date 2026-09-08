@@ -12,6 +12,7 @@ class Say2 < Formula
     system "swift", "build", "-c", "release", "--disable-sandbox"
     system "codesign", "--force", "--sign", "-", ".build/release/say2"
     bin.install ".build/release/say2"
+    man1.install "man/say2.1"
   end
 
   test do

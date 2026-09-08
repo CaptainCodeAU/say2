@@ -1,0 +1,158 @@
+.TH SAY2 1 "2026" "say2 1.2.0" "User Commands"
+.SH NAME
+say2 \- render Apple's private neural Siri voices from the command line
+.SH SYNOPSIS
+.B say2
+[\fISAY\-COMPATIBLE OPTIONS\fR] \fITEXT\fR
+.br
+.B say2 synthesize
+[\fIOPTIONS\fR] [\fITEXT\fR]
+.br
+.B say2 voices
+[\fB\-\-json\fR | \fB\-\-available\fR | \fB\-\-install\fR \fINAME\fR | \fB\-\-purge\fR \fINAME\fR | \fB\-\-status\fR \fINAME\fR | \fB\-\-manage\fR]
+.br
+.B say2 doctor
+[\fB\-\-json\fR] [\fB\-\-skip\-probe\fR]
+.br
+.B say2 serve
+[\fB\-\-host\fR \fIADDRESS\fR] [\fB\-\-port\fR \fINUMBER\fR] [\fB\-\-engine\fR \fIKIND\fR] [\fB\-\-allow\-remote\fR]
+.br
+.B say2 \-\-explain
+\fICODE\fR
+.br
+.B say2 \-\-exit\-codes
+[\fB\-\-json\fR]
+.SH DESCRIPTION
+.B say2
+reaches Apple's on\-device neural Siri text\-to\-speech voices, which the
+public
+.BR say (1)
+and
+.B AVSpeechSynthesizer
+APIs cannot select. It writes WAV, CAF, or raw PCM; streams audio; returns
+native word timings; and exposes an OpenAI\-compatible local HTTP API via
+.BR "say2 serve" .
+.PP
+It links a private macOS framework and therefore has no compatibility
+guarantee across macOS releases. See
+.B EXIT STATUS
+below for how it reports that, and
+.B "say2 doctor"
+for a live compatibility probe.
+.SH COMMON OPTIONS
+.TP
+.BR \-v ", " \-\-voice " " \fINAME\fR
+Voice display name or asset identifier, matched case\-insensitively.
+.TP
+.BR \-o ", " \-\-output " " \fIPATH\fR
+Output file; \fB\-\fR streams raw PCM to standard output. Omit entirely to
+play through the default audio device.
+.TP
+.B \-\-no\-output
+Synthesize and discard the audio without writing or playing it \- for
+measuring synthesis in isolation. Prefer this to
+.B \-o /dev/null
+, which fails (see exit 73 below): say2 stages its temp file inside the
+output directory for a fast same\-filesystem atomic rename, and
+.I /dev
+is not a writable directory.
+.TP
+.BR \-r " " \fIWPM\fR
+\fBsay\fR(1)\-compatible words per minute; 175 maps to the native rate multiplier 1.0.
+.TP
+.BR \-\-engine " " \fIKIND\fR
+.BR siri " (default), " av ", or " auto .
+.B auto
+falls back from Siri to AV on daemon, framework, timeout, or audio
+failures, but not on a missing or uninstalled voice.
+.PP
+Run
+.B "say2 synthesize \-\-help"
+(or any subcommand with
+.BR \-\-help )
+for the complete option list.
+.SH EXIT STATUS
+.B say2
+uses a stable, versioned exit\-code contract so a caller \- human or
+automated \- can distinguish a permanent failure from a transient one
+without parsing prose.
+.BR "say2 \-\-explain " CODE
+prints the meaning and remedy for any code below;
+.B "say2 \-\-exit\-codes \-\-json"
+prints the whole table as machine\-readable JSON. Both read from the same
+source as this section, so they cannot drift out of sync with it.
+.TP
+.B 0
+Success.
+.TP
+.B 2
+Invalid invocation \- bad flag, bad value, or two options that conflict.
+Will not succeed by retrying unchanged.
+.TP
+.B 3
+No compatible engine could handle the request.
+.TP
+.B 4
+Voice not found \- the name or asset key does not match anything known.
+.TP
+.B 5
+Daemon unreachable: the framework is present but its resident daemon did
+not respond in time. Usually transient; retrying is reasonable.
+.TP
+.B 6
+Synthesis produced empty, silent, malformed, or implausibly short audio.
+.TP
+.B 7
+Timed out waiting for a bounded operation (a synthesis render, or a
+.B "voices \-\-install \-\-wait"
+poll) to complete.
+.TP
+.B 8
+The requested voice exists in Apple's catalog but is not installed.
+Recoverable with
+.BR "say2 voices \-\-install" .
+.TP
+.B 69
+The private Siri TTS framework itself is not present on this system \-
+most likely an Apple macOS update removed or renamed it.
+.B This is permanent, not transient.
+Do not retry with the same engine; switch to
+.B "\-\-engine av"
+(or
+.BR auto ,
+which does this automatically). Set
+.B SAY2_FORCE_FRAMEWORK_UNAVAILABLE=1
+in the environment to exercise this path deterministically without
+waiting for a real macOS update to trigger it.
+.TP
+.B 70
+Unexpected internal failure \- a say2 bug, not a usage or environment
+problem. Worth reporting upstream.
+.TP
+.B 73
+Could not write audio to the requested
+.B \-o
+location \- the directory does not exist, is not writable, or (like
+.IR /dev )
+is not a normal writable directory.
+.TP
+.B 130
+Cancelled (SIGINT/SIGTERM) before completion.
+.SH ENVIRONMENT
+.TP
+.B SAY2_FORCE_FRAMEWORK_UNAVAILABLE
+When set to
+.BR 1 ,
+forces exit\-69 behavior unconditionally, regardless of whether the real
+framework is actually present. Exists so a caller can test its own
+fallback logic deterministically. No effect unless set.
+.SH SEE ALSO
+.BR say (1)
+.br
+Full reference, HTTP API, and Swift SDK documentation:
+https://github.com/CaptainCodeAU/say2
+.SH BUGS
+say2 depends on an undocumented private macOS framework and has no
+compatibility guarantee across macOS releases. See exit code 69 above and
+.BR "say2 doctor" .
+Report issues at https://github.com/CaptainCodeAU/say2/issues .

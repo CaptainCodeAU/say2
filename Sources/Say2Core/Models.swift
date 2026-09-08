@@ -32,6 +32,106 @@ public enum ExitCode: Int32, Sendable {
     case outputWriteFailed = 73
 }
 
+public struct ExitCodeDescription: Codable, Equatable, Sendable {
+    public let code: Int32
+    public let name: String
+    public let meaning: String
+    public let remedy: String
+}
+
+/// The canonical, versioned exit-code reference. `--explain N` and
+/// `--exit-codes` both read from this single source so the two surfaces
+/// can't drift out of sync with each other.
+public let exitCodeReference: [ExitCodeDescription] = [
+    .init(
+        code: ExitCode.success.rawValue, name: "success",
+        meaning: "Synthesis (or the requested command) completed normally.",
+        remedy: "Nothing to do."
+    ),
+    .init(
+        code: ExitCode.usage.rawValue, name: "usage",
+        meaning: "The invocation itself is invalid -- an unknown flag, a bad "
+            + "value, or two options that can't be combined.",
+        remedy: "Fix the command line. This will never succeed by retrying "
+            + "unchanged; check `say2 <command> --help`."
+    ),
+    .init(
+        code: ExitCode.noCompatibleEngine.rawValue, name: "no compatible engine",
+        meaning: "No engine could handle the request -- for example, no "
+            + "AVSpeechSynthesizer voice is available for the requested "
+            + "language, or --engine auto exhausted both Siri and AV.",
+        remedy: "Try a different --language, install a matching voice, or "
+            + "check `say2 doctor` for engine availability."
+    ),
+    .init(
+        code: ExitCode.voiceNotFound.rawValue, name: "voice not found",
+        meaning: "The requested voice name or asset key does not match any "
+            + "voice say2 knows about, installed or not.",
+        remedy: "Run `say2 voices` (or `--available`) to see valid names."
+    ),
+    .init(
+        code: ExitCode.daemonUnreachable.rawValue, name: "daemon unreachable",
+        meaning: "The private Siri TTS framework is present but its resident "
+            + "daemon did not respond in time. This is usually transient.",
+        remedy: "Retry. If it keeps happening, run `say2 doctor` -- if the "
+            + "framework itself is missing you'll get exit 69 instead, not this."
+    ),
+    .init(
+        code: ExitCode.noAudio.rawValue, name: "no audio",
+        meaning: "Synthesis produced empty, silent, malformed, or "
+            + "implausibly short audio -- the render happened but the "
+            + "result failed validation.",
+        remedy: "Retry, or try a different voice/engine. If it's consistent "
+            + "for specific text, that text may be the trigger."
+    ),
+    .init(
+        code: ExitCode.operationTimedOut.rawValue, name: "operation timed out",
+        meaning: "A bounded operation (a synthesis render, or a `voices "
+            + "--install --wait` poll) did not complete before its timeout.",
+        remedy: "Increase --timeout, or retry -- this does not mean the "
+            + "framework is broken, just that this one operation was slow."
+    ),
+    .init(
+        code: ExitCode.voiceNotInstalled.rawValue, name: "voice not installed",
+        meaning: "The requested voice exists in Apple's catalog but is not "
+            + "installed on this Mac.",
+        remedy: "Run `say2 voices --install \"<name>\"`, then retry."
+    ),
+    .init(
+        code: ExitCode.frameworkUnavailable.rawValue, name: "framework unavailable",
+        meaning: "The private Siri TTS framework itself is not present on "
+            + "this system -- most likely an Apple macOS update removed or "
+            + "renamed it. This is permanent, not a hiccup.",
+        remedy: "Do not retry with the same engine. Switch to `--engine av` "
+            + "(or `auto`, which does this automatically), and check for a "
+            + "say2 update that supports the new framework shape."
+    ),
+    .init(
+        code: ExitCode.internalFailure.rawValue, name: "internal failure",
+        meaning: "An unexpected failure inside say2 itself -- not a usage "
+            + "error, not a known engine/output condition.",
+        remedy: "This is a say2 bug. Please report it with the full error "
+            + "message and, if possible, `say2 doctor --json` output."
+    ),
+    .init(
+        code: ExitCode.outputWriteFailed.rawValue, name: "output write failed",
+        meaning: "Audio could not be written to the requested -o location "
+            + "-- the directory doesn't exist, isn't writable, or (like "
+            + "/dev) isn't a normal writable directory.",
+        remedy: "Check the output path and its parent directory's "
+            + "permissions. For benchmarking or measuring without writing "
+            + "a file, use --no-output instead of -o /dev/null, which will "
+            + "also fail this way."
+    ),
+    .init(
+        code: ExitCode.cancelled.rawValue, name: "cancelled",
+        meaning: "The operation was interrupted (SIGINT/SIGTERM) before it "
+            + "completed.",
+        remedy: "Expected when the caller cancels intentionally. No action "
+            + "needed unless the cancellation was unintended."
+    ),
+]
+
 public struct CLIError: LocalizedError, Sendable {
     public let message: String
     public let code: ExitCode
@@ -316,6 +416,8 @@ public enum ParsedCommand: Sendable {
     case synthesize(SynthesisOptions)
     case doctor(DoctorOptions)
     case serve(ServeOptions)
+    case explain(Int32)
+    case exitCodes(json: Bool)
 }
 
 public struct SynthesisResult: Codable, Sendable {

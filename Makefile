@@ -38,9 +38,12 @@ benchmark: build
 install: build
 	install -d "$(DESTDIR)$(PREFIX)/bin"
 	install -m 755 "$(BUILD_DIR)/say2" "$(DESTDIR)$(PREFIX)/bin/say2"
+	install -d "$(DESTDIR)$(PREFIX)/share/man/man1"
+	install -m 644 man/say2.1 "$(DESTDIR)$(PREFIX)/share/man/man1/say2.1"
 
 uninstall:
 	rm -f "$(DESTDIR)$(PREFIX)/bin/say2"
+	rm -f "$(DESTDIR)$(PREFIX)/share/man/man1/say2.1"
 
 clean:
 	swift package clean

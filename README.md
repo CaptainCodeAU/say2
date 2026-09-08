@@ -48,6 +48,8 @@ say2 doctor
 say2 voices
 ```
 
+Homebrew also installs a man page — `man say2` covers everything below, including the full exit-status contract, without needing this file. `say2 --explain CODE` and `say2 --exit-codes [--json]` cover the same ground from inside the binary itself.
+
 ### Render a file
 
 ```sh
@@ -197,6 +199,8 @@ This section documents every command, option, alias, accepted value, default, an
 | `say2 COMMAND -h`, `say2 COMMAND --help`  | Print command-specific help and exit successfully.                                                                                    |
 | `say2 -V`, `say2 --version`               | Print the tool version and exit successfully.                                                                                         |
 | `say2 -v ?`                                   | `say`-compatible shortcut for listing installed Siri voices.                                                                          |
+| `say2 --explain CODE`                         | Print what an exit code means and what to do about it, without needing this README.                                                  |
+| `say2 --exit-codes [--json]`                  | Print the complete exit-code reference table, human-readable or as JSON.                                                              |
 
 ### `synthesize`
 
@@ -421,6 +425,7 @@ The interface version is `1.0.0`. It covers the documented CLI behavior and HTTP
 | 5    | Daemon unreachable (present but not responding) — transient, worth retrying |
 | 6    | Empty, silent, malformed, or implausibly short audio             |
 | 7    | Timed out waiting for a requested operation to become observable, including a bounded synthesis render |
+| 8    | Voice exists in Apple's catalog but is not installed — `say2 voices --install` fixes it |
 | 69   | The private Siri TTS framework is not present on this system — permanent until a say2/macOS update; fall back to `--engine av` rather than retry |
 | 70   | Unexpected internal failure                                      |
 | 73   | Could not write audio to the requested output location (bad directory, unwritable path) |

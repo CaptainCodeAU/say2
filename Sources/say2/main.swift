@@ -25,10 +25,10 @@ do {
     if error.code == .success {
         print(error.message)
     } else {
-        writeStderr("error: \(error.message)\n")
+        writeStderr("error: \(error.message) [exit \(error.code.rawValue)]\n")
     }
     exit(error.code.rawValue)
 } catch {
-    writeStderr("error: \(error.localizedDescription)\n")
+    writeStderr("error: \(error.localizedDescription) [exit \(ExitCode.internalFailure.rawValue)]\n")
     exit(ExitCode.internalFailure.rawValue)
 }
