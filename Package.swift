@@ -31,16 +31,16 @@ let privateInterfaces = "Sources/PrivateInterfaces"
 let xcodePrivateInterfaces = "${SRCROOT}/Sources/PrivateInterfaces"
 
 let package = Package(
-    name: "siri-tts-cli",
+    name: "say2",
     platforms: [.macOS("15.6")],
     products: [
-        .executable(name: "siri-tts", targets: ["siri-tts"]),
-        .library(name: "SiriTTSClient", targets: ["SiriTTSClient"]),
+        .executable(name: "say2", targets: ["say2"]),
+        .library(name: "Say2Client", targets: ["Say2Client"]),
     ],
     targets: [
-        .target(name: "SiriTTSClient"),
+        .target(name: "Say2Client"),
         .target(
-            name: "SiriTTSCore",
+            name: "Say2Core",
             swiftSettings: [
                 .unsafeFlags([
                     "-enable-library-evolution",
@@ -60,12 +60,12 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "siri-tts",
-            dependencies: ["SiriTTSCore"]
+            name: "say2",
+            dependencies: ["Say2Core"]
         ),
         .testTarget(
-            name: "SiriTTSCoreTests",
-            dependencies: ["SiriTTSCore"],
+            name: "Say2CoreTests",
+            dependencies: ["Say2Core"],
             swiftSettings: [
                 .unsafeFlags([
                     "-I\(privateInterfaces)",
@@ -75,8 +75,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "SiriTTSClientTests",
-            dependencies: ["SiriTTSClient"]
+            name: "Say2ClientTests",
+            dependencies: ["Say2Client"]
         ),
     ]
 )

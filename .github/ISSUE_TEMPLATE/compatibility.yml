@@ -12,7 +12,7 @@ body:
     id: doctor
     attributes:
       label: Doctor report
-      description: Paste the complete output of `siri-tts doctor --json`.
+      description: Paste the complete output of `say2 doctor --json`.
       render: json
     validations:
       required: true

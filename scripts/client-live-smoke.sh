@@ -2,11 +2,11 @@
 set -euo pipefail
 
 repo_root="${0:A:h:h}"
-binary="${SIRI_TTS_BIN:-$repo_root/build/siri-tts}"
-fixture="$repo_root/Tests/Fixtures/SiriTTSClientConsumer"
+binary="${SAY2_BIN:-$repo_root/build/say2}"
+fixture="$repo_root/Tests/Fixtures/Say2ClientConsumer"
 port=$((20_000 + RANDOM % 20_000))
 helper_url="http://127.0.0.1:$port"
-scratch=$(mktemp -d /tmp/siri-tts-client-live.XXXXXX)
+scratch=$(mktemp -d /tmp/say2ent-live.XXXXXX)
 server_pid=""
 
 cleanup() {
@@ -52,7 +52,7 @@ wait_for_server() {
 server_pid=$!
 wait_for_server "$helper_url" "Swift client smoke test"
 
-SIRI_TTS_HELPER_URL="$helper_url" swift run --package-path "$fixture"
+SAY2_HELPER_URL="$helper_url" swift run --package-path "$fixture"
 
 voice="$(curl --noproxy '*' --fail --silent "$helper_url/v1/models" | plutil -extract data.0.id raw -o - -)"
 request="$scratch/long-request.json"

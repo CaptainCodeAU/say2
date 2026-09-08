@@ -1,6 +1,6 @@
-# siri-tts-cli
+# say2
 
-`siri-tts` is a set of tools to access the high-quality Siri speech models programmatically on your Mac. You can access it three ways: a CLI, an OpenAI-compatible HTTP API, and a Swift SDK. It reaches neural Siri voices that Apple's public speech APIs exclude and can write WAV, CAF, or raw PCM; stream audio; and return native word timings.
+`say2` is a set of tools to access the high-quality Siri speech models programmatically on your Mac. You can access it three ways: a CLI, an OpenAI-compatible HTTP API, and a Swift SDK. It reaches neural Siri voices that Apple's public speech APIs exclude and can write WAV, CAF, or raw PCM; stream audio; and return native word timings.
 
 ## Choose your path
 
@@ -13,11 +13,11 @@
 The CLI, HTTP API, and Swift SDK are the supported integration surfaces.
 
 ```console
-$ siri-tts voices
+$ say2 voices
 NAME    LANGUAGE  VERSION  ENGINE  INSTALLED  ASSET KEY
 Aaron   en-US     5030     siri    yes        en-US:natural:male:Aaron:premium:5030
 
-$ siri-tts -v Aaron -o hello.wav "The good voice, from the terminal."
+$ say2 -v Aaron -o hello.wav "The good voice, from the terminal."
 ✓ Aaron · 2.91s · 48000 Hz · /path/to/hello.wav
 ```
 
@@ -37,26 +37,26 @@ The CLI is the recommended starting point for people, scripts, and non-Swift app
 ### Install with Homebrew
 
 ```sh
-brew tap maximilianromer/siri-tts-cli https://github.com/maximilianromer/siri-tts-cli.git
-brew install maximilianromer/siri-tts-cli/siri-tts-cli
+brew tap CaptainCodeAU/say2 https://github.com/CaptainCodeAU/say2.git
+brew install CaptainCodeAU/say2/say2
 ```
 
 Open a new terminal and verify the installation with:
 
 ```sh
-siri-tts doctor
-siri-tts voices
+say2 doctor
+say2 voices
 ```
 
 ### Render a file
 
 ```sh
 # Generate "Hello." in Aaron's voice and save it as speech.wav
-siri-tts synthesize --voice Aaron --language en-US -o speech.wav "Hello."
+say2 synthesize --voice Aaron --language en-US -o speech.wav "Hello."
 # Generate the text currently in the clipboard as article.wav
-pbpaste | siri-tts synthesize -o article.wav
+pbpaste | say2 synthesize -o article.wav
 # Generate the text of chapter.txt and save it as chapter.caf
-siri-tts -f chapter.txt --format caf -o chapter.caf
+say2 -f chapter.txt --format caf -o chapter.caf
 ```
 
 WAV is the default file format. Raw PCM is signed little-endian 16-bit audio; Siri currently returns 48 kHz mono.
@@ -66,8 +66,8 @@ WAV is the default file format. Raw PCM is signed little-endian 16-bit audio; Si
 The common `say` surface is accepted, so existing scripts can often change only the command name:
 
 ```sh
-alias say=siri-tts
-siri-tts -v Aaron -r 210 -o faster.wav "Two hundred ten words per minute."
+alias say=say2
+say2 -v Aaron -r 210 -o faster.wav "Two hundred ten words per minute."
 ```
 
 `-v`, `-o`, `-f`, `-r`, `--file-format`, `--data-format`, `--quality`, and `--progress` are supported. As with `say`, `-r` means words per minute; 175 WPM maps to the native `--rate 1.0`. `--rate` itself remains a multiplier. Lossless PCM has no encoder-quality setting, so valid `--quality` values are accepted only for command compatibility. Unsupported flags fail clearly instead of being ignored.
@@ -75,14 +75,14 @@ siri-tts -v Aaron -r 210 -o faster.wav "Two hundred ten words per minute."
 ### Stream audio
 
 ```sh
-siri-tts synthesize --format pcm -o - "Audio starts before the sentence is finished." \
+say2 synthesize --format pcm -o - "Audio starts before the sentence is finished." \
   | your-audio-consumer
 ```
 
 ### Word timings
 
 ```sh
-siri-tts synthesize \
+say2 synthesize \
   --voice Aaron \
   --timings timings.json \
   --json \
@@ -95,15 +95,15 @@ The daemon supplies each word's start time and an `NSRange` into the source text
 ### Discover and install voices
 
 ```sh
-siri-tts voices
-siri-tts voices --json
-siri-tts voices --include-av
-siri-tts voices --available
-siri-tts voices --install "Siri Voice Name"
-siri-tts voices --install "Siri Voice Name" --wait
-siri-tts voices --purge "Siri Voice Name"
-siri-tts voices --status "Siri Voice Name"
-siri-tts voices --manage
+say2 voices
+say2 voices --json
+say2 voices --include-av
+say2 voices --available
+say2 voices --install "Siri Voice Name"
+say2 voices --install "Siri Voice Name" --wait
+say2 voices --purge "Siri Voice Name"
+say2 voices --status "Siri Voice Name"
+say2 voices --manage
 ```
 
 - --available lists downloadable premium Siri voices from Apple’s TTS catalog. If the catalog is unavailable, JSON is labeled installed-fallback and only installed voices are returned.
@@ -117,7 +117,7 @@ siri-tts voices --manage
 Start the local HTTP API server with:
 
 ```sh
-siri-tts serve --port 8080
+say2 serve --port 8080
 ```
 
 It implements:
@@ -143,8 +143,8 @@ curl http://127.0.0.1:8080/v1/audio/speech \
 ## Diagnostics
 
 ```sh
-siri-tts doctor
-siri-tts doctor --json
+say2 doctor
+say2 doctor --json
 ```
 
 The report includes the macOS product version and build, architecture, framework and daemon status, engine availability, installed voice assets, ANE compilation state, observed audio format, and a short real non-silent synthesis probe. `doctor --json` is the right attachment for a compatibility report.
@@ -157,23 +157,23 @@ This section documents every command, option, alias, accepted value, default, an
 
 | Invocation                                        | Behavior                                                                                                                              |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `siri-tts`                                        | Print top-level help. To synthesize from standard input, invoke `siri-tts synthesize` or include at least one synthesis option.       |
-| `siri-tts TEXT`                                   | Synthesize positional text without writing the `synthesize` command explicitly. Multiple positional arguments are joined with spaces. |
-| `siri-tts synthesize [OPTIONS] [TEXT]`            | Synthesize positional text, a UTF-8 input file, or UTF-8 standard input.                                                              |
-| `siri-tts voices [OPTIONS]`                       | List, discover, install, inspect, or manage voices.                                                                                   |
-| `siri-tts doctor [OPTIONS]`                       | Produce a compatibility report.                                                                                                       |
-| `siri-tts serve [OPTIONS]`                        | Start the local HTTP server.                                                                                                          |
-| `siri-tts -h`, `siri-tts --help`, `siri-tts help` | Print top-level help and exit successfully.                                                                                           |
-| `siri-tts COMMAND -h`, `siri-tts COMMAND --help`  | Print command-specific help and exit successfully.                                                                                    |
-| `siri-tts -V`, `siri-tts --version`               | Print the tool version and exit successfully.                                                                                         |
-| `siri-tts -v ?`                                   | `say`-compatible shortcut for listing installed Siri voices.                                                                          |
+| `say2`                                        | Print top-level help. To synthesize from standard input, invoke `say2 synthesize` or include at least one synthesis option.       |
+| `say2 TEXT`                                   | Synthesize positional text without writing the `synthesize` command explicitly. Multiple positional arguments are joined with spaces. |
+| `say2 synthesize [OPTIONS] [TEXT]`            | Synthesize positional text, a UTF-8 input file, or UTF-8 standard input.                                                              |
+| `say2 voices [OPTIONS]`                       | List, discover, install, inspect, or manage voices.                                                                                   |
+| `say2 doctor [OPTIONS]`                       | Produce a compatibility report.                                                                                                       |
+| `say2 serve [OPTIONS]`                        | Start the local HTTP server.                                                                                                          |
+| `say2 -h`, `say2 --help`, `say2 help` | Print top-level help and exit successfully.                                                                                           |
+| `say2 COMMAND -h`, `say2 COMMAND --help`  | Print command-specific help and exit successfully.                                                                                    |
+| `say2 -V`, `say2 --version`               | Print the tool version and exit successfully.                                                                                         |
+| `say2 -v ?`                                   | `say`-compatible shortcut for listing installed Siri voices.                                                                          |
 
 ### `synthesize`
 
 ```text
-siri-tts synthesize [OPTIONS] [TEXT...]
-siri-tts [OPTIONS] TEXT...
-echo TEXT | siri-tts synthesize [OPTIONS]
+say2 synthesize [OPTIONS] [TEXT...]
+say2 [OPTIONS] TEXT...
+echo TEXT | say2 synthesize [OPTIONS]
 ```
 
 Positional text, `-f`/`--input-file`, and standard input are the three input modes. `--` ends option parsing so text beginning with a hyphen can be spoken. Long synthesis options that take a value also accept `--option=value` as an alternative to `--option value`; the other commands require the separated form.
@@ -214,10 +214,10 @@ Output rules:
 ### `voices`
 
 ```text
-siri-tts voices [--json] [--available] [--include-av]
-siri-tts voices --install NAME [--wait] [--timeout SECONDS] [--json]
-siri-tts voices --status NAME [--timeout SECONDS] [--json]
-siri-tts voices --manage [--json]
+say2 voices [--json] [--available] [--include-av]
+say2 voices --install NAME [--wait] [--timeout SECONDS] [--json]
+say2 voices --status NAME [--timeout SECONDS] [--json]
+say2 voices --manage [--json]
 ```
 
 | Option              | Accepted value and default                                                 | Behavior                                                                                                                                                           |
@@ -237,7 +237,7 @@ siri-tts voices --manage [--json]
 ### `doctor`
 
 ```text
-siri-tts doctor [--json] [--skip-probe]
+say2 doctor [--json] [--skip-probe]
 ```
 
 | Option         | Default | Behavior                                                                                                                                                                       |
@@ -251,7 +251,7 @@ Without `--skip-probe`, doctor synthesizes unique text with Siri when reachable 
 ### `serve`
 
 ```text
-siri-tts serve [--host ADDRESS] [--port NUMBER] [--engine KIND] [--verbose]
+say2 serve [--host ADDRESS] [--port NUMBER] [--engine KIND] [--verbose]
 ```
 
 | Option           | Accepted value and default                                 | Behavior                                                                                                                                          |
@@ -270,13 +270,13 @@ The server handles one synthesis request at a time and always prints its listeni
 
 | JSON field        | Required | Accepted value and default                                                                               |
 | ----------------- | -------- | -------------------------------------------------------------------------------------------------------- |
-| `model`           | Yes      | String accepted for OpenAI request compatibility; engine selection comes from `siri-tts serve --engine`. |
+| `model`           | Yes      | String accepted for OpenAI request compatibility; engine selection comes from `say2 serve --engine`. |
 | `input`           | Yes      | Non-whitespace text.                                                                                     |
 | `voice`           | Yes      | Voice display name or asset identifier.                                                                  |
 | `response_format` | No       | `wav` or `pcm`; default: `wav`.                                                                          |
 | `speed`           | No       | `0.25` through `4.0`; default: `1.0`.                                                                    |
 
-A successful speech response is `audio/wav` or `application/octet-stream` and carries `X-Siri-TTS-Engine: siri|av`. Errors use `{"error":{"message":"..."}}` with an appropriate HTTP status. Unknown routes return `404`.
+A successful speech response is `audio/wav` or `application/octet-stream` and carries `X-Say2-Engine: siri|av`. Errors use `{"error":{"message":"..."}}` with an appropriate HTTP status. Unknown routes return `404`.
 
 ### JSON and timing payloads
 
@@ -297,55 +297,55 @@ Most versioned CLI payloads currently use `schemaVersion: 1`. The installation r
 
 ## Swift SDK
 
-`SiriTTSClient` is the supported Swift SDK for listing voices and requesting WAV or PCM audio from a separately running `siri-tts` helper. The application imports a standard Swift package; the helper process owns the private macOS framework and can fail or restart without taking the host app down.
+`Say2Client` is the supported Swift SDK for listing voices and requesting WAV or PCM audio from a separately running `say2` helper. The application imports a standard Swift package; the helper process owns the private macOS framework and can fail or restart without taking the host app down.
 
 ```text
-Your Swift app → SiriTTSClient → localhost → siri-tts serve → macOS voice service
+Your Swift app → Say2Client → localhost → say2 serve → macOS voice service
 ```
 
 ### Add the package
 
-In Xcode, add this repository as a package dependency and select the `SiriTTSClient` product. The equivalent `Package.swift` entry is:
+In Xcode, add this repository as a package dependency and select the `Say2Client` product. The equivalent `Package.swift` entry is:
 
 ```swift
 dependencies: [
     .package(
-        url: "https://github.com/maximilianromer/siri-tts-cli.git",
+        url: "https://github.com/CaptainCodeAU/say2.git",
         from: "1.0.0"
     ),
 ]
 ```
 
-Then add `.product(name: "SiriTTSClient", package: "siri-tts-cli")` to the application target. The SDK is intentionally independent of `SiriTTSCore`, so a consuming app does not need Apple's private Swift interface in its build.
+Then add `.product(name: "Say2Client", package: "say2")` to the application target. The SDK is intentionally independent of `Say2Core`, so a consuming app does not need Apple's private Swift interface in its build.
 
 ### Start and configure the helper
 
 Install the CLI on the same Mac, then start its loopback-only server:
 
 ```sh
-siri-tts serve --host 127.0.0.1 --port 8080
+say2 serve --host 127.0.0.1 --port 8080
 ```
 
 The SDK connects to that address by default. A different helper port can be configured explicitly:
 
 ```swift
 import Foundation
-import SiriTTSClient
+import Say2Client
 
-let client = SiriTTSClient(configuration: .init(
+let client = Say2Client(configuration: .init(
     baseURL: URL(string: "http://127.0.0.1:9090")!
 ))
 ```
 
-`SiriTTSClient` connects to an existing local helper. The host application starts and supervises the `siri-tts serve` process.
+`Say2Client` connects to an existing local helper. The host application starts and supervises the `say2 serve` process.
 
 ### List voices and synthesize speech
 
 ```swift
 import Foundation
-import SiriTTSClient
+import Say2Client
 
-let client = SiriTTSClient()
+let client = Say2Client()
 let voices = try await client.voices()
 
 let audio = try await client.synthesize(.init(
@@ -404,5 +404,5 @@ The unit suite covers CLI validation and `say` translation, WAV headers, silence
 
 ## Acknowledgements
 
-- Made with [OpenAI Codex](https://github.com/openai/codex) using GPT-5.6 Sol
+- Forked from [siri-tts-cli](https://github.com/maximilianromer/siri-tts-cli) by Maximilian Romer
 - Project wouldn’t be possible without Apple’s excellent on-device Siri voice models

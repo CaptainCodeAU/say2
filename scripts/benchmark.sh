@@ -3,17 +3,17 @@ set -euo pipefail
 
 SCRIPT_DIR="${0:A:h}"
 PROJECT_DIR="${SCRIPT_DIR:h}"
-SIRI_TTS_BIN="${SIRI_TTS_BIN:-$PROJECT_DIR/build/siri-tts}"
+SAY2_BIN="${SAY2_BIN:-$PROJECT_DIR/build/say2}"
 ITERATIONS="${ITERATIONS:-5}"
-BENCH_DIR="$(mktemp -d "${TMPDIR:-/tmp}/siri-tts-benchmark.XXXXXX")"
+BENCH_DIR="$(mktemp -d "${TMPDIR:-/tmp}/say2-benchmark.XXXXXX")"
 trap 'rm -rf "$BENCH_DIR"' EXIT
 
-if [[ ! -x "$SIRI_TTS_BIN" ]]; then
-  print -u2 "benchmark: binary not found: $SIRI_TTS_BIN"
+if [[ ! -x "$SAY2_BIN" ]]; then
+  print -u2 "benchmark: binary not found: $SAY2_BIN"
   exit 1
 fi
 
-VOICE="$("$SIRI_TTS_BIN" voices --json | plutil -extract voices.0.name raw -o - -)"
+VOICE="$("$SAY2_BIN" voices --json | plutil -extract voices.0.name raw -o - -)"
 print "mode,iteration,time_to_first_audio_seconds,time_to_complete_seconds,audio_duration_seconds"
 
 for MODE in prewarm no-prewarm; do
@@ -23,7 +23,7 @@ for MODE in prewarm no-prewarm; do
       EXTRA=(--no-prewarm)
     fi
     RESULT="$BENCH_DIR/${MODE}-${ITERATION}.json"
-    "$SIRI_TTS_BIN" synthesize \
+    "$SAY2_BIN" synthesize \
       --voice "$VOICE" \
       --json \
       "${EXTRA[@]}" \
