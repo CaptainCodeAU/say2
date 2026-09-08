@@ -112,6 +112,30 @@ say2 voices --manage
 - --status reports the current install status of a voice.
 - --purge deletes the selected voice’s local asset. It does not change voice subscriptions, so macOS may download the voice again if an app or system service still subscribes to it.
 
+#### The same name can list twice with a different asset key
+
+Some voices (e.g. `Aaron` on en-US) appear as two separate rows with the same
+display name but a different `technology` field in their asset key —
+`natural` and `neuralAX` — and a large version-number gap (observed:
+`natural:...:5030` vs `neuralAX:...:1370`). Picking by name alone can select
+either one with no indication they differ.
+
+Measured on identical input, both at 48 kHz: the audio spectra match within
+1.5 dB in every band up to 15 kHz — the difference is not loudness, clarity,
+or bandwidth. `natural` took 31% longer to speak the same sentence, with
+different pause and stress placement. In short: `natural` favors expressive
+pacing, `neuralAX` favors speed. If one sounds noticeably better or worse to
+you than the other, that's very likely why — pick by ear (`--voice`
+accepts the exact asset key from `say2 voices --json` if you want to lock in
+a specific one) rather than assuming same-named entries are interchangeable.
+
+Unconfirmed but circumstantial: the naming and a roughly 4x on-disk size
+difference between the same voice listed under Read & Speak vs VoiceOver
+Utility in System Settings suggest `neuralAX` may be the VoiceOver-oriented
+build (AX = Accessibility), optimized for intelligibility at high playback
+rates rather than natural cadence. Apple documents neither name, so treat
+this as a hypothesis, not a fact.
+
 ## OpenAI-compatible HTTP API
 
 Start the local HTTP API server with:
