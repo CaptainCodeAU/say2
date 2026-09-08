@@ -33,14 +33,22 @@ Semantic versioning, `X.Y.Z`:
    ```sh
    git push && git push origin vX.Y.Z
    ```
-5. `brew install CaptainCodeAU/say2/say2` (or `brew upgrade`) now picks up the new tag.
+5. **Watch CI to completion — every push, not just releases:**
+   ```sh
+   gh run watch --repo CaptainCodeAU/say2 --exit-status
+   ```
+   (or check the Actions tab). A push isn't done until this comes back green.
+   If it's red, fix it and push a follow-up commit — don't leave `main` on a
+   failed run, and don't consider a release finished while its commit's CI is
+   red or still unchecked.
+6. `brew install CaptainCodeAU/say2/say2` (or `brew upgrade`) now picks up the new tag.
 
 ## What CI checks automatically
 
 `.github/workflows/ci.yml` builds and runs the unit test suite on every push
-and pull request. If that's red, treat the branch as not release-ready
-regardless of what `release.sh` would let you do locally — the script can't
-see CI status before you've even pushed.
+and pull request. It can only be trusted by actually watching it run —
+`release.sh` can't see CI status before you've even pushed, and a push
+without a checked result is not a verified push.
 
 Live tests that need a real installed Siri voice can't run on GitHub's
 runners, so they're not part of CI. Run `make live-test` yourself before a
