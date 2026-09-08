@@ -8,7 +8,10 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: macos-15
+    # macos-15's default Xcode (16.4) ships Swift 6.1, but Package.swift
+    # requires swift-tools-version 6.2 (Xcode 26+, per README requirements).
+    # macos-26 defaults to Xcode 26.6, which matches.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
