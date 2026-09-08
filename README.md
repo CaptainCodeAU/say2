@@ -92,6 +92,12 @@ say2 synthesize \
 
 The daemon supplies each word's start time and an `NSRange` into the source text. The JSON therefore identifies offsets as UTF-16, which keeps emoji, CJK, and other non-BMP text correct. End times are explicitly marked `endDerived: true`: they are derived from the next word's start, and the final word ends at the measured audio duration. If a voice does not support native timings, the tool returns an empty list and `timingsSupported: false`.
 
+### Leading silence and embedded silence commands
+
+Every render starts with roughly 320 ms of silence before the first word, with no flag needed. This is a real, measured characteristic of the underlying engine, not a bug — it exists to stop the first word from clipping when the audio device has been idle, which matters for notification-style playback. say2 does not add or control this padding; do not add your own lead-in on top of it.
+
+say2 does not implement or parse `say`-style embedded speech commands (e.g. `[[slnc 500]]`) — it passes text to Apple's engine byte-for-byte. `[[slnc N]]` for `N` up to about 400 ms is delivered accurately. Above that, Apple's engine itself silently delivers roughly 200 ms less than requested (`[[slnc 500]]` renders as ~300 ms, `[[slnc 800]]` as ~600 ms) — a bug in the underlying voice engine, not in say2, and outside this project's control to fix. If you need an exact, long pause, split it into several tags of 400 ms or less yourself (e.g. `[[slnc 400]][[slnc 100]]` for 500 ms) — that measured within about 3% of the requested total in testing, versus 25-40% short as a single large tag.
+
 ### Discover and install voices
 
 ```sh
