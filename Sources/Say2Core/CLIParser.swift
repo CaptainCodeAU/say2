@@ -383,8 +383,8 @@ OPTIONS
   -f, --input-file PATH  Read UTF-8 input from a file
   -r WPM                 `say`-compatible words per minute (175 = 1.0x)
   --rate MULTIPLIER      Native speaking-rate multiplier
-  --pitch MULTIPLIER     Pitch from 0.5 through 2.0
-  --volume NUMBER        Volume from 0 through 1
+  --pitch MULTIPLIER     Pitch from 0.5 through 2.0 (av engine only; no effect on siri)
+  --volume NUMBER        Volume from 0 through 1 (av engine only; no effect on siri)
   --engine KIND          siri (default), av, or auto
   --format FORMAT        wav (default), pcm, or caf
   --timings PATH         Write versioned word timings as JSON

@@ -245,6 +245,13 @@ public final class Say2Application: @unchecked Sendable {
                 "warning: \(fallback.rawValue) engine failed; visibly falling back to \(rendered.engine.rawValue)\n"
             )
         }
+        if rendered.engine == .siri, options.pitch != 1 || options.volume != 1 {
+            writeStderr(
+                "warning: --pitch/--volume have no effect on the siri engine "
+                    + "(Apple's engine does not honor them); use --engine av "
+                    + "if you need them applied\n"
+            )
+        }
 
         let mappedTimings = try WordTimingMapper.map(
             rendered.timings,
