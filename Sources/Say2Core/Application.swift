@@ -245,7 +245,12 @@ public final class Say2Application: @unchecked Sendable {
                 "warning: \(fallback.rawValue) engine failed; visibly falling back to \(rendered.engine.rawValue)\n"
             )
         }
-        if rendered.engine == .siri, options.pitch != 1 || options.volume != 1 {
+        var ignoredOptions: [String] = []
+        if rendered.engine == .siri {
+            if options.pitch != 1 { ignoredOptions.append("pitch") }
+            if options.volume != 1 { ignoredOptions.append("volume") }
+        }
+        if !ignoredOptions.isEmpty {
             writeStderr(
                 "warning: --pitch/--volume have no effect on the siri engine "
                     + "(Apple's engine does not honor them); use --engine av "
@@ -319,7 +324,8 @@ public final class Say2Application: @unchecked Sendable {
             timings: mappedTimings,
             timingsSupported: rendered.timingsSupported,
             elapsedSeconds: rendered.elapsed,
-            timeToFirstAudioSeconds: rendered.timeToFirstAudio
+            timeToFirstAudioSeconds: rendered.timeToFirstAudio,
+            ignoredOptions: ignoredOptions
         )
 
         if options.json {

@@ -430,6 +430,12 @@ public struct SynthesisResult: Codable, Sendable {
     public let timingsSupported: Bool
     public let elapsedSeconds: Double
     public let timeToFirstAudioSeconds: Double?
+    /// Options that were accepted (didn't fail validation) but had no
+    /// effect on this render, e.g. --pitch/--volume on the siri engine.
+    /// Always present, empty when nothing was ignored, so a caller can
+    /// assert on it without a nil check. A durable contract, not specific
+    /// to any one flag: anything say2 accepts but cannot honor belongs here.
+    public let ignoredOptions: [String]
 
     public init(
         engine: String,
@@ -439,7 +445,8 @@ public struct SynthesisResult: Codable, Sendable {
         timings: [WordTiming],
         timingsSupported: Bool,
         elapsedSeconds: Double,
-        timeToFirstAudioSeconds: Double?
+        timeToFirstAudioSeconds: Double?,
+        ignoredOptions: [String] = []
     ) {
         self.schemaVersion = say2SchemaVersion
         self.engine = engine
@@ -450,6 +457,7 @@ public struct SynthesisResult: Codable, Sendable {
         self.timingsSupported = timingsSupported
         self.elapsedSeconds = elapsedSeconds
         self.timeToFirstAudioSeconds = timeToFirstAudioSeconds
+        self.ignoredOptions = ignoredOptions
     }
 }
 
