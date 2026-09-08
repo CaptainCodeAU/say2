@@ -251,18 +251,19 @@ Without `--skip-probe`, doctor synthesizes unique text with Siri when reachable 
 ### `serve`
 
 ```text
-say2 serve [--host ADDRESS] [--port NUMBER] [--engine KIND] [--verbose]
+say2 serve [--host ADDRESS] [--port NUMBER] [--engine KIND] [--verbose] [--allow-remote]
 ```
 
 | Option           | Accepted value and default                                 | Behavior                                                                                                                                          |
 | ---------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--host ADDRESS` | IPv4 or IPv6 literal, or `localhost`; default: `127.0.0.1` | Select the bind address. Non-loopback addresses expose an unauthenticated endpoint and print a warning. IPv6 addresses are displayed in brackets. |
+| `--host ADDRESS` | IPv4 or IPv6 literal, or `localhost`; default: `127.0.0.1` | Select the bind address. A non-loopback address requires `--allow-remote`; without it, `serve` refuses to start. IPv6 addresses are displayed in brackets. |
 | `--port NUMBER`  | `1` through `65535`; default: `8080`                       | Select the listening port.                                                                                                                        |
 | `--engine KIND`  | `siri`, `av`, or `auto`; default: `siri`                   | Select the engine used for both model listing and synthesis. Values are case-insensitive.                                                         |
-| `--verbose`      | Off                                                        | Log request failures to standard error in addition to returning their JSON HTTP error response.                                                   |
+| `--verbose`      | Off                                                        | Log every request failure to standard error, not only unexpected internal ones, in addition to returning the JSON HTTP error response.            |
+| `--allow-remote` | Off                                                        | Confirm that binding a non-loopback `--host` is intentional. Required for any address other than `127.0.0.1`, `::1`, or `localhost`.              |
 | `-h`, `--help`   | —                                                          | Print server help and exit successfully.                                                                                                          |
 
-The server handles one synthesis request at a time and always prints its listening URL to standard error. It has no authentication or TLS and should normally remain bound to loopback.
+The server handles one synthesis request at a time and always prints its listening URL to standard error. It has no authentication or TLS, so `serve` refuses to bind a non-loopback address unless `--allow-remote` is passed explicitly; anyone who can reach the port then has unauthenticated use of the endpoint. Errors from unexpected internal failures are returned to callers as a generic `Internal server error` message (the real detail is always logged to standard error); errors that are part of the documented API — bad input, missing voice, engine unavailable — are still returned with their specific message.
 
 `GET /v1/models` returns an OpenAI-style model list. Each installed voice is represented as a model with `id`, `object: "model"`, and `owned_by: "local-macos"`. The selected server engine controls whether the list comes from Siri, AV, or Siri-with-AV-fallback.
 

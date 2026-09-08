@@ -163,4 +163,15 @@ final class CLIParserTests: XCTestCase {
         XCTAssertThrowsError(try CLIParser.parse(["serve", "--engine", "cloud"]))
     }
 
+    func testServeAllowRemoteFlagParsing() throws {
+        guard case .serve(let defaultOptions) = try CLIParser.parse(["serve"]) else {
+            return XCTFail("Expected .serve")
+        }
+        XCTAssertFalse(defaultOptions.allowRemote)
+
+        guard case .serve(let options) = try CLIParser.parse(["serve", "--host", "0.0.0.0", "--allow-remote"]) else {
+            return XCTFail("Expected .serve")
+        }
+        XCTAssertTrue(options.allowRemote)
+    }
 }

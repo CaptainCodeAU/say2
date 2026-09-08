@@ -61,6 +61,38 @@ final class HTTPTests: XCTestCase {
         XCTAssertEqual(value.speed, 1.25)
     }
 
+    func testRemoteBindGuardRequiresAllowRemoteForNonLoopbackHosts() {
+        let error = SpeechServer.remoteBindError(host: "0.0.0.0", allowRemote: false)
+        XCTAssertNotNil(error)
+        XCTAssertEqual(error?.code, .usage)
+        XCTAssertTrue(error?.message.contains("--allow-remote") == true)
+
+        XCTAssertNil(SpeechServer.remoteBindError(host: "0.0.0.0", allowRemote: true))
+        XCTAssertNil(SpeechServer.remoteBindError(host: "192.168.1.5", allowRemote: true))
+    }
+
+    func testRemoteBindGuardNeverBlocksLoopbackHosts() {
+        for host in ["127.0.0.1", "::1", "localhost"] {
+            XCTAssertNil(SpeechServer.remoteBindError(host: host, allowRemote: false))
+        }
+    }
+
+    func testInternalFailuresReturnGenericMessageButKnownFailuresDoNot() {
+        let server = SpeechServer(options: ServeOptions(), coordinator: EngineCoordinator())
+
+        let internalResponse = server.errorResponse(CLIError("posix error 13: permission denied at /private/secret", code: .internalFailure))
+        let internalText = String(decoding: internalResponse, as: UTF8.self)
+        XCTAssertTrue(internalText.hasPrefix("HTTP/1.1 500 Internal Server Error\r\n"))
+        XCTAssertTrue(internalText.contains("Internal server error"))
+        XCTAssertFalse(internalText.contains("permission denied"))
+        XCTAssertFalse(internalText.contains("/private/secret"))
+
+        let usageResponse = server.errorResponse(CLIError("response_format must be wav or pcm", code: .usage))
+        let usageText = String(decoding: usageResponse, as: UTF8.self)
+        XCTAssertTrue(usageText.hasPrefix("HTTP/1.1 400 Bad Request\r\n"))
+        XCTAssertTrue(usageText.contains("response_format must be wav or pcm"))
+    }
+
     func testEndpointRejectsUnsupportedFormatWithValidHTTP() throws {
         let server = SpeechServer(options: ServeOptions(), coordinator: EngineCoordinator())
         let body = Data(

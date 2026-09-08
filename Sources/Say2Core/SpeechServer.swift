@@ -102,7 +102,10 @@ public final class SpeechServer {
         if options.engine != .av {
             coordinator.siri.enableKeepActive()
         }
-        if !["127.0.0.1", "::1", "localhost"].contains(options.host) {
+        if let error = Self.remoteBindError(host: options.host, allowRemote: options.allowRemote) {
+            throw error
+        }
+        if !Self.loopbackHosts.contains(options.host) {
             writeStderr(
                 "warning: binding \(options.host) exposes unauthenticated speech synthesis to the network\n"
             )
@@ -168,6 +171,17 @@ public final class SpeechServer {
         stateLock.withLock {
             stopping = true
         }
+    }
+
+    static let loopbackHosts: Set<String> = ["127.0.0.1", "::1", "localhost"]
+
+    /// Returns the error to throw when `host` needs `--allow-remote` and doesn't have it, or `nil` if binding may proceed.
+    static func remoteBindError(host: String, allowRemote: Bool) -> CLIError? {
+        guard !loopbackHosts.contains(host), !allowRemote else { return nil }
+        return CLIError(
+            "Binding \(host) would expose unauthenticated speech synthesis to the network. Pass --allow-remote to confirm this is intended.",
+            code: .usage
+        )
     }
 
 
@@ -497,9 +511,8 @@ public final class SpeechServer {
         return Data(header.utf8)
     }
 
-    private func errorResponse(_ error: Error) -> Data {
+    func errorResponse(_ error: Error) -> Data {
         let message = error.localizedDescription
-        if options.verbose { writeStderr("request failed: \(message)\n") }
         let status: String
         if let failure = error as? HTTPFailure {
             status = failure.status
@@ -517,10 +530,18 @@ public final class SpeechServer {
         } else {
             status = "500 Internal Server Error"
         }
+        // Only well-formed client-facing failures (HTTPFailure, and the CLIError
+        // codes mapped above) are meant to be read by the caller. Anything that
+        // falls through to 500 is an unexpected internal failure whose raw
+        // message (POSIX errors, decoder internals, etc.) should not leave the
+        // machine, even though it's always worth logging locally.
+        let isInternal = status == "500 Internal Server Error"
+        if options.verbose || isInternal { writeStderr("request failed: \(message)\n") }
+        let clientMessage = isInternal ? "Internal server error" : message
         return response(
             status: status,
             contentType: "application/json",
-            body: encodedJSON(["error": ["message": message]])
+            body: encodedJSON(["error": ["message": clientMessage]])
         )
     }
 

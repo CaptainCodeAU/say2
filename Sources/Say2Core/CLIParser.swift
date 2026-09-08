@@ -269,6 +269,7 @@ public enum CLIParser {
                 result.port = port
             case "--engine": result.engine = try parseEngine(try next())
             case "--verbose": result.verbose = true
+            case "--allow-remote": result.allowRemote = true
             case "-h", "--help":
                 throw CLIError(serveHelp, code: .success)
             default:
@@ -374,8 +375,10 @@ when a non-speaking diagnostic is required.
 
 public let serveHelp = """
 USAGE
-  say2 serve [--host 127.0.0.1] [--port 8080] [--engine siri|av|auto]
+  say2 serve [--host 127.0.0.1] [--port 8080] [--engine siri|av|auto] [--allow-remote]
 
 Implements GET /v1/models and POST /v1/audio/speech. Loopback is the safe default.
-Binding a routable address is explicit and prints a security warning.
+The server has no authentication, so binding a non-loopback address requires
+--allow-remote; without it, say2 refuses to start rather than silently exposing
+speech synthesis to the network.
 """

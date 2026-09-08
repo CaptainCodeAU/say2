@@ -287,6 +287,7 @@ public struct ServeOptions: Sendable {
     public var port: UInt16 = 8080
     public var engine: EngineKind = .siri
     public var verbose = false
+    public var allowRemote = false
 
     public init() {}
 }
