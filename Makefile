@@ -1,5 +1,7 @@
 SHELL := /bin/zsh
-PREFIX ?= /usr/local
+# /usr/local/bin is root-owned on Apple silicon Macs; Homebrew's own prefix
+# (/opt/homebrew, user-writable) is the right default when Homebrew is present.
+PREFIX ?= $(shell command -v brew >/dev/null 2>&1 && brew --prefix || echo /usr/local)
 BUILD_DIR := $(CURDIR)/build
 PRODUCT := $(CURDIR)/.build/release/say2
 
