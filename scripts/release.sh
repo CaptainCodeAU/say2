@@ -36,7 +36,7 @@ fi
 print "release: running tests..."
 make test
 
-CURRENT_VERSION="$(grep -o 'say2Version = "[0-9.]*"' Sources/Say2Core/Models.swift | grep -o '[0-9.]*')"
+CURRENT_VERSION="$(sed -n 's/.*say2Version = "\([0-9.]*\)".*/\1/p' Sources/Say2Core/Models.swift | head -1)"
 if [[ -z "$CURRENT_VERSION" ]]; then
   print -u2 "release: could not read the current say2Version from Sources/Say2Core/Models.swift"
   exit 1
