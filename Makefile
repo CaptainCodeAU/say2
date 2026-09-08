@@ -1,17 +1,17 @@
 SHELL := /bin/zsh
 PREFIX ?= /usr/local
 BUILD_DIR := $(CURDIR)/build
-PRODUCT := $(CURDIR)/.build/release/siri-tts
+PRODUCT := $(CURDIR)/.build/release/say2
 
-.PHONY: all build debug test client-test live-test smoke benchmark install uninstall clean
+.PHONY: all build debug test client-test live-test smoke benchmark install uninstall clean release
 
 all: build
 
 build:
 	swift build -c release
 	mkdir -p "$(BUILD_DIR)"
-	cp "$(PRODUCT)" "$(BUILD_DIR)/siri-tts"
-	codesign --force --sign - "$(BUILD_DIR)/siri-tts"
+	cp "$(PRODUCT)" "$(BUILD_DIR)/say2"
+	codesign --force --sign - "$(BUILD_DIR)/say2"
 
 debug:
 	swift build
@@ -21,25 +21,29 @@ test:
 	$(MAKE) client-test
 
 client-test:
-	swift build --package-path Tests/Fixtures/SiriTTSClientConsumer
+	swift build --package-path Tests/Fixtures/Say2ClientConsumer
 
 live-test: build
-	SIRI_TTS_LIVE_TESTS=1 swift test --filter LiveSystemTests
-	SIRI_TTS_BIN="$(BUILD_DIR)/siri-tts" ./scripts/client-live-smoke.sh
+	SAY2_LIVE_TESTS=1 swift test --filter LiveSystemTests
+	SAY2_BIN="$(BUILD_DIR)/say2" ./scripts/client-live-smoke.sh
 
 smoke: build
-	SIRI_TTS_BIN="$(BUILD_DIR)/siri-tts" ./scripts/smoke.sh
+	SAY2_BIN="$(BUILD_DIR)/say2" ./scripts/smoke.sh
 
 benchmark: build
-	SIRI_TTS_BIN="$(BUILD_DIR)/siri-tts" ./scripts/benchmark.sh
+	SAY2_BIN="$(BUILD_DIR)/say2" ./scripts/benchmark.sh
 
 install: build
 	install -d "$(DESTDIR)$(PREFIX)/bin"
-	install -m 755 "$(BUILD_DIR)/siri-tts" "$(DESTDIR)$(PREFIX)/bin/siri-tts"
+	install -m 755 "$(BUILD_DIR)/say2" "$(DESTDIR)$(PREFIX)/bin/say2"
 
 uninstall:
-	rm -f "$(DESTDIR)$(PREFIX)/bin/siri-tts"
+	rm -f "$(DESTDIR)$(PREFIX)/bin/say2"
 
 clean:
 	swift package clean
 	rm -rf "$(BUILD_DIR)"
+
+release:
+	@if [ -z "$(VERSION)" ]; then echo "usage: make release VERSION=X.Y.Z"; exit 2; fi
+	./scripts/release.sh $(VERSION)
