@@ -56,7 +56,12 @@ else
   fi
 
   git add Sources/Say2Core/Models.swift Formula/say2.rb
-  git commit -m "Release $TAG"
+  if [[ -n "${CLAUDE_WEB_URL:-}" ]]; then
+    git commit -m "Release $TAG" -m "Claude-Session: $CLAUDE_WEB_URL"
+  else
+    print -u2 "release: CLAUDE_WEB_URL is not set -- this commit's C-Web-Id trailer will be blank"
+    git commit -m "Release $TAG"
+  fi
 fi
 
 git tag "$TAG"
