@@ -10,7 +10,8 @@ private Siri TTS voices. Fork of `siri-tts-cli`.
 Don't hand-edit the version number or the Homebrew formula's tag separately —
 follow `RELEASING.md`. Short version: `make release VERSION=X.Y.Z` bumps the
 version and creates the git tag locally; pushing (`git push && git push
-origin vX.Y.Z`) is a separate, deliberate step left to the human.
+origin vX.Y.Z`) is a separate, deliberate step that this project's session
+runs itself (the lane file allows it), then watches CI as below.
 
 Bring this process up unprompted whenever the user asks to ship, release,
 tag, or publish a change, or when a nontrivial feature/fix has just landed on

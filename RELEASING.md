@@ -1,8 +1,8 @@
 # Releasing say2
 
-One script does the mechanical part. You still decide _when_ to release, and
-you still run the command that makes it public — the script stops short of
-that on purpose.
+One script does the mechanical part. The script stops short of the push that
+makes a release public, so that push is always its own deliberate step. Either
+you or a say2 Claude Code session may run it.
 
 ## Versioning
 
@@ -45,7 +45,8 @@ Semantic versioning, `X.Y.Z`:
    make smoke
    ```
 
-4. Publish it. This is the one step the script deliberately leaves to you:
+4. Publish it. The script deliberately leaves this step out; you or a say2
+   Claude Code session runs it:
 
    ```sh
    git push && git push origin vX.Y.Z
