@@ -70,6 +70,8 @@ struct IncrementalSynthesisResult: Sendable {
     let bytes: Int
     let sampleCount: Int
     let durationSeconds: TimeInterval
+    /// Each distinct prewarm warning from the pieces, in the order first seen.
+    var prewarmWarnings: [String] = []
 }
 
 enum LongFormSynthesis {
@@ -94,6 +96,7 @@ enum LongFormSynthesis {
         var sampleCount = 0
         var duration = 0.0
         var timeToFirstAudio: TimeInterval?
+        var prewarmWarnings: [String] = []
 
         for chunk in chunks where !chunk.text.trimmingCharacters(
             in: .whitespacesAndNewlines
@@ -147,6 +150,10 @@ enum LongFormSynthesis {
                     )
                 )
             })
+            if let warning = rendered.audio.prewarmWarning,
+               !prewarmWarnings.contains(warning) {
+                prewarmWarnings.append(warning)
+            }
             timingsSupported = timingsSupported && rendered.audio.timingsSupported
             if onProvisionalPCMChunk == nil {
                 try sink(rendered.audio.pcm)
@@ -173,7 +180,8 @@ enum LongFormSynthesis {
             timeToFirstAudio: timeToFirstAudio,
             bytes: byteCount,
             sampleCount: sampleCount,
-            durationSeconds: duration
+            durationSeconds: duration,
+            prewarmWarnings: prewarmWarnings
         )
     }
 }

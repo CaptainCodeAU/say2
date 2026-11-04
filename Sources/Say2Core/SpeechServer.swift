@@ -359,6 +359,11 @@ public final class SpeechServer {
             coordinator: coordinator,
             sink: spool.append
         )
+        if options.verbose {
+            for warning in rendered.prewarmWarnings {
+                writeStderr("request warning: \(warning)\n")
+            }
+        }
         let output = FileManager.default.temporaryDirectory.appendingPathComponent(
             "say2-response-\(UUID().uuidString).\(format)"
         )

@@ -245,6 +245,9 @@ public final class Say2Application: @unchecked Sendable {
                 "warning: \(fallback.rawValue) engine failed; visibly falling back to \(rendered.engine.rawValue)\n"
             )
         }
+        for warning in rendered.prewarmWarnings {
+            writeStderr("warning: \(warning)\n")
+        }
         var ignoredOptions: [String] = []
         if rendered.engine == .siri {
             if options.pitch != 1 { ignoredOptions.append("pitch") }

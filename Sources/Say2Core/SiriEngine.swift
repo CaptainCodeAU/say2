@@ -344,7 +344,7 @@ public final class SiriEngine: @unchecked Sendable {
         try throwIfCancelled(token)
         let nativeVoices = try fetchNativeVoices()
         var options = SynthesisOptions()
-        options.text = "Siri TTS prewarm"
+        options.text = Self.prewarmText
         options.voice = voice
         options.language = language
         let selected = try selectVoice(options, from: nativeVoices)
@@ -414,12 +414,22 @@ public final class SiriEngine: @unchecked Sendable {
 
         let timingsSupported = options.requestTimings ? queryTimings(for: voice) : false
         try throwIfCancelled(token, notifyCancellation: emitCancellation)
+        var prewarmWarning: String?
         if options.prewarm {
-            _ = performPrewarm(
-                request,
+            // The prewarm gets its own short request. Reusing the real request
+            // sent the full text to sirittsd twice, once as a prewarm (#4770).
+            let prewarmRequest = SynthesisRequest(text: Self.prewarmText, voice: voice)
+            prewarmRequest.synthesisContext.rate = options.rate
+            prewarmRequest.synthesisContext.pitch = options.pitch
+            prewarmRequest.synthesisContext.volume = options.volume
+            let prewarmTimeout = min(30, options.timeout)
+            let outcome = performPrewarm(
+                prewarmRequest,
                 token: token,
-                timeout: min(30, options.timeout)
+                timeout: prewarmTimeout
             )
+            if outcome == nil { session.cancel(request: prewarmRequest) }
+            prewarmWarning = Self.prewarmWarning(for: outcome, timeout: prewarmTimeout)
         }
         try throwIfCancelled(token, notifyCancellation: emitCancellation)
         request.synthesisContext.didGenerateAudio = { chunk in
@@ -511,7 +521,8 @@ public final class SiriEngine: @unchecked Sendable {
             timingsSupported: timingsSupported,
             engine: .siri,
             elapsed: elapsed,
-            timeToFirstAudio: snapshot.firstAudioAt.map { $0.timeIntervalSince(synthesisStarted) }
+            timeToFirstAudio: snapshot.firstAudioAt.map { $0.timeIntervalSince(synthesisStarted) },
+            prewarmWarning: prewarmWarning
         )
         guard lifecycle.claimCompletion(token) else {
             emitCancellation()
@@ -552,6 +563,26 @@ public final class SiriEngine: @unchecked Sendable {
         }
         guard done.wait(timeout: .now() + timeout) == .success else { return nil }
         return try? state.get().get()
+    }
+
+    static let prewarmText = "Siri TTS prewarm"
+
+    /// Turns a prewarm outcome into the warning a caller sees, or nil when the
+    /// prewarm succeeded. `nil` outcome means it timed out (or was cancelled,
+    /// which the caller reports separately) (#4769).
+    static func prewarmWarning(
+        for outcome: Result<Void, Error>?,
+        timeout: TimeInterval
+    ) -> String? {
+        guard let outcome else {
+            return "Siri prewarm timed out after \(Int(timeout)) s; rendering went on"
+        }
+        switch outcome {
+        case .success:
+            return nil
+        case .failure(let error):
+            return "Siri prewarm failed: \(error.localizedDescription); rendering went on"
+        }
     }
 
     private func performPrewarm(

@@ -482,4 +482,7 @@ public struct RenderedAudio: Sendable {
     public let engine: EngineKind
     public let elapsed: Double
     public let timeToFirstAudio: Double?
+    /// Set when the prewarm before this render failed or timed out. Rendering
+    /// still went on; this only makes the failure visible to the caller.
+    public var prewarmWarning: String? = nil
 }
