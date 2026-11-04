@@ -49,13 +49,19 @@ else
   sed -i '' "s/public let say2Version = \"[0-9.]*\"/public let say2Version = \"$VERSION\"/" \
     Sources/Say2Core/Models.swift
   sed -i '' "s/tag: \"v[0-9.]*\"/tag: \"$TAG\"/" Formula/say2.rb
+  # The man page's .TH line names the version too; it was missed until 1.3.1.
+  sed -i '' "s/^\(\.TH SAY2 1 \"[^\"]*\" \)\"say2 [0-9.]*\"/\1\"say2 $VERSION\"/" man/say2.1
 
   if [[ -z "$(git status --porcelain -- Sources/Say2Core/Models.swift Formula/say2.rb)" ]]; then
     print -u2 "release: version bump produced no changes -- check the sed patterns still match"
     exit 1
   fi
+  if ! grep -q "^\.TH SAY2 1 \"[^\"]*\" \"say2 $VERSION\"" man/say2.1; then
+    print -u2 "release: man/say2.1 does not name say2 $VERSION -- check its .TH line"
+    exit 1
+  fi
 
-  git add Sources/Say2Core/Models.swift Formula/say2.rb
+  git add Sources/Say2Core/Models.swift Formula/say2.rb man/say2.1
   if [[ -n "${CLAUDE_WEB_URL:-}" ]]; then
     git commit -m "Release $TAG" -m "Claude-Session: $CLAUDE_WEB_URL"
   else
