@@ -1,7 +1,7 @@
 import CoreAudioTypes
 import Foundation
 
-public let say2Version = "1.3.1"
+public let say2Version = "1.3.2"
 public let say2SchemaVersion = 1
 
 public enum ExitCode: Int32, Sendable {
