@@ -433,6 +433,8 @@ The interface version is `1.0.0`. It covers the documented CLI behavior and HTTP
 
 Codes 5 and 69 look similar but call for different caller behavior: 5 means the framework exists but didn't answer in time (retrying is reasonable), 69 means the framework itself is gone (retrying will not help; switch engines).
 
+say2 already retries a failed piece of text itself before it gives up with 5 or 6: once as a whole, then sentence by sentence, each sentence with one more try. Each recovery prints a `warning:` line on stderr. When audio is streamed to stdout (`--output -`) and part of the failed piece has already gone out, say2 does not retry, so no audio is heard twice.
+
 To verify your own fallback logic against exit 69 without waiting for an actual macOS update to break something, set `SAY2_FORCE_FRAMEWORK_UNAVAILABLE=1` in the environment for any `say2` invocation — it forces the "framework not present" path deterministically, with no effect unless that variable is set.
 
 ## Testing and performance

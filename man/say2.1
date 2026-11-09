@@ -98,6 +98,9 @@ Voice not found \- the name or asset key does not match anything known.
 .B 5
 Daemon unreachable: the framework is present but its resident daemon did
 not respond in time. Usually transient; retrying is reasonable.
+say2 has already retried the failed piece once, and then sentence by
+sentence, before it exits with this code (unless audio was being streamed
+and part of that piece had already gone out).
 .TP
 .B 6
 Synthesis produced empty, silent, malformed, or implausibly short audio.

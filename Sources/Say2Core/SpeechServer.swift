@@ -360,7 +360,7 @@ public final class SpeechServer {
             sink: spool.append
         )
         if options.verbose {
-            for warning in rendered.prewarmWarnings {
+            for warning in rendered.prewarmWarnings + rendered.recoveryWarnings {
                 writeStderr("request warning: \(warning)\n")
             }
         }
