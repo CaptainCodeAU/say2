@@ -1,6 +1,6 @@
 # say2
 
-Read ~/CODE/CaptainCodeAU/say2-isolinear/LANE.md first.
+Lane file: ~/CODE/CaptainCodeAU/say2-isolinear/LANE.md. engage's launcher loads it into every engage session; a session not started by engage reads it first.
 
 A macOS CLI + local OpenAI-compatible HTTP server + Swift SDK for Apple's
 private Siri TTS voices. Fork of `siri-tts-cli`.
